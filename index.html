@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Food Sales Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f9f9f9;
+            color: #333;
+        }
+        .filter-container {
+            background: #2196F3;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .filter-container h2 {
+            margin-bottom: 20px;
+        }
+        form {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        form select, form button {
+            padding: 10px;
+            font-size: 14px;
+        }
+        .table-container {
+            max-width: 90%;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            text-align: center;
+            padding: 8px;
+        }
+        th {
+            background-color: #2196F3;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="filter-container">
+        <h2>Food Sales Data</h2>
+        <form id="filterForm">
+            <select id="startDate" name="startDate">
+                <option value="">Start Date</option>
+            </select>
+            <select id="endDate" name="endDate">
+                <option value="">End Date</option>
+            </select>
+            <select id="city" name="city">
+                <option value="">Select City</option>
+            </select>
+            <select id="category" name="category">
+                <option value="">Select Category</option>
+            </select>
+            <button type="button" onclick="fetchFilteredData()">Apply Filters</button>
+        </form>
+    </div>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Region</th>
+                    <th>City</th>
+                    <th>Category</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Total Price</th>
+                </tr>
+            </thead>
+            <tbody id="dataTable">
+                <tr>
+                    <td colspan="8">No data available</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <script>
+        // Fetch unique filters
+        function populateFilters() {
+            fetch('/get_filters')
+                .then(response => response.json())
+                .then(data => {
+                    populateDropdown('startDate', data.dates);
+                    populateDropdown('endDate', data.dates);
+                    populateDropdown('city', data.cities);
+                    populateDropdown('category', data.categories);
+                })
+                .catch(error => console.error('Error fetching filters:', error));
+        }
+
+        function populateDropdown(id, items) {
+            const select = document.getElementById(id);
+            items.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item;
+                option.textContent = item;
+                select.appendChild(option);
+            });
+        }
+
+        // Fetch filtered data
+        function fetchFilteredData() {
+            const formData = new FormData(document.getElementById('filterForm'));
+            fetch('/filter_data', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('dataTable');
+                    tableBody.innerHTML = '';
+
+                    if (data.length === 0) {
+                        tableBody.innerHTML = '<tr><td colspan="8">No data available</td></tr>';
+                        return;
+                    }
+
+                    data.forEach(row => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${row.Date}</td>
+                            <td>${row.Region}</td>
+                            <td>${row.City}</td>
+                            <td>${row.Category}</td>
+                            <td>${row.Product}</td>
+                            <td>${row.Qty}</td>
+                            <td>${row.UnitPrice}</td>
+                            <td>${row.TotalPrice}</td>
+                        `;
+                        tableBody.appendChild(tr);
+                    });
+                })
+                .catch(error => console.error('Error fetching filtered data:', error));
+        }
+
+        // Initialize filters on page load
+        window.onload = populateFilters;
+    </script>
+</body>
+</html>
